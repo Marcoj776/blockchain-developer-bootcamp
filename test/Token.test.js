@@ -6,7 +6,7 @@ const Token = artifacts.require('./Token')
 
 console.log(artifacts);
 
-contract('Token', (accounts) => {
+contract('Token', ([deployer]) => {
     let token
     const settings = {
         name: 'My Name',
@@ -34,6 +34,10 @@ contract('Token', (accounts) => {
         })
         it('tracks the totalSupply', async () => {
             const r = await token.totalSupply()
+            r.toString().should.equal(settings.totalSupply)
+        })
+        it('assigns totalSupply to deployer', async () => {
+            const r = await token.balanceOf(deployer)
             r.toString().should.equal(settings.totalSupply)
         })
     })
