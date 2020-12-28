@@ -1,18 +1,18 @@
+import { tokens } from '../helpers';
+
 require('chai')
     .use(require('chai-as-promised'))
     .should()
 
 const Token = artifacts.require('./Token')
 
-console.log(artifacts);
-
-contract('Token', ([deployer]) => {
+contract('Token', ([deployer, receiver]) => {
     let token
     const settings = {
         name: 'My Name',
         symbol: 'DAPP',
         decimals: '18',
-        totalSupply: '1' + ('0'.repeat(24)),
+        totalSupply: tokens(1000000).toString(),
     }
 
     beforeEach(async () => {
@@ -39,6 +39,37 @@ contract('Token', ([deployer]) => {
         it('assigns totalSupply to deployer', async () => {
             const r = await token.balanceOf(deployer)
             r.toString().should.equal(settings.totalSupply)
+        })
+    })
+
+    describe('sending tokens', () => {
+        const rawAmount = 100;
+        let result
+        let amount
+
+        beforeEach(async () => {
+            //transfer
+            amount = tokens(rawAmount)
+            result = await token.transfer(receiver, amount, { from: deployer })
+        })
+        it('transfer token balances', async () => {
+            let balanceOf
+
+            //after
+            balanceOf = await token.balanceOf(deployer)
+            balanceOf.toString().should.equal((tokens(1000000 - rawAmount)).toString())
+
+            balanceOf = await token.balanceOf(receiver)
+            balanceOf.toString().should.equal(amount.toString())
+        })
+
+        it('emits a transfer event', async () => {
+            const log = result.logs[0]
+            log.event.should.equal('Transfer');
+            const event = log.args
+            event.from.toString().should.equal(deployer, 'from is correct')
+            event.to.should.equal(receiver, 'to is correct')
+            event.value.toString().should.equal(amount.toString(), 'amount is correct')
         })
     })
 })
