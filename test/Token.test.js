@@ -1,4 +1,4 @@
-import { tokens } from '../helpers';
+import { tokens, EVM_REVERT, EVM_REVERT_ADDRESS } from '../helpers';
 
 require('chai')
     .use(require('chai-as-promised'))
@@ -14,6 +14,9 @@ contract('Token', ([deployer, receiver]) => {
         decimals: '18',
         totalSupply: tokens(1000000).toString(),
     }
+    const rawAmount = 100;
+    let result
+    let amount = tokens(rawAmount)
 
     beforeEach(async () => {
         token = await Token.new()
@@ -43,13 +46,9 @@ contract('Token', ([deployer, receiver]) => {
     })
 
     describe('sending tokens', () => {
-        const rawAmount = 100;
-        let result
-        let amount
 
         beforeEach(async () => {
             //transfer
-            amount = tokens(rawAmount)
             result = await token.transfer(receiver, amount, { from: deployer })
         })
         it('transfer token balances', async () => {
@@ -70,6 +69,26 @@ contract('Token', ([deployer, receiver]) => {
             event.from.toString().should.equal(deployer, 'from is correct')
             event.to.should.equal(receiver, 'to is correct')
             event.value.toString().should.equal(amount.toString(), 'amount is correct')
+        })
+    })
+
+    describe('failure', () => {
+        beforeEach(async () => {
+        })
+        it('rejects insuffcient token balances', async () => {
+            let invalidAmount = tokens(100000000)
+            await token.transfer(receiver, invalidAmount, { from: deployer }).should.be.rejectedWith(EVM_REVERT);
+            
+            let invalidAmount2 = tokens(10)
+            await token.transfer(deployer, invalidAmount2, { from: receiver }).should.be.rejectedWith(EVM_REVERT);
+        })
+    })
+
+    describe('invalid receiver', () => {
+        beforeEach(async () => {
+        })
+        it('rejects invlaid address', async () => {
+            await token.transfer(0x0, amount, { from: deployer }).should.be.rejectedWith(EVM_REVERT_ADDRESS);
         })
     })
 })
