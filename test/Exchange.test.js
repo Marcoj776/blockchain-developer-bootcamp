@@ -38,13 +38,14 @@ contract('Exchange', ([deployer, feeAccount, user1]) => {
     describe('Depositing tokens', () => {
         let balance
         let tokenBalance
-        beforeEach(async () => {
-            await token.approve(exchange.address, tokens(10), { from: user1 });
-            result = await exchange.depositToken(token.address, tokens(10), { from: user1 })
-            balance = await token.balanceOf(exchange.address);
-            tokenBalance = await exchange.tokens(token.address, user1);
-        })
+
         describe('success', () => {
+            beforeEach(async () => {
+                await token.approve(exchange.address, tokens(10), { from: user1 });
+                result = await exchange.depositToken(token.address, tokens(10), { from: user1 })
+                balance = await token.balanceOf(exchange.address);
+                tokenBalance = await exchange.tokens(token.address, user1);
+            })
 
             it('tracks the token deposit', async () => {
                 balance.toString().should.equal(amount.toString());
@@ -63,7 +64,13 @@ contract('Exchange', ([deployer, feeAccount, user1]) => {
         })
         
         describe('failure', () => {
-            it('tracks the token deposit', async () => {
+            it('fails on lack of approval', async () => {
+                await exchange.depositToken(token.address, tokens(10), 
+                    { from: user1 }).should.be.rejectedWith(EVM_REVERT);
+                balance = await token.balanceOf(exchange.address);
+                tokenBalance = await exchange.tokens(token.address, user1);
+                balance.toString().should.equal('0');
+                tokenBalance.toString().should.equal('0');
             })
         })
     })
