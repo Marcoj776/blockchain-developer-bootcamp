@@ -1,8 +1,6 @@
 import { tokens, EVM_REVERT, ETHER_ADDRESS, ether } from '../helpers';
 
-require('chai')
-    .use(require('chai-as-promised'))
-    .should()
+require('chai').use(require('chai-as-promised')).should()
 
 const Token = artifacts.require('./Token')
 const Exchange = artifacts.require('./Exchange')
@@ -221,6 +219,50 @@ contract('Exchange', ([deployer, feeAccount, user1]) => {
         describe('failure', () => {
             it('tries to get the ETH balance', async () => {
                 await exchange.balanceOfToken(ETHER_ADDRESS, user1).should.be.rejectedWith(EVM_REVERT)
+            })
+        })
+    })
+
+    describe('Making orders', async () => {
+        let token = await Token.new()
+        let tokenGet = token.address
+        let amountGet = tokens(2)
+        let tokenGive = ETHER_ADDRESS
+        let amountGive = ether(1)
+
+        beforeEach(async () => {
+            result = await exchange.makeOrder(tokenGet, amountGet, tokenGive, amountGive, { from: user1 })
+        })
+        
+        it('tracks the order created', async () => {
+            const orderCount = await exchange.orderCount()
+            orderCount.toString().should.equal('1', 'orderCount is correct')
+            const order = await exchange.orders('1')
+            order.id.toString().should.equal('1', 'ID is correct')
+            order.user.toString().should.equal(user1.toString(), 'user is correct')
+            order.tokenGet.toString().should.equal(tokenGet.toString(), 'tokenGet is correct')
+            order.amountGet.toString().should.equal(amountGet.toString(), 'amountGet is correct')
+            order.tokenGive.toString().should.equal(tokenGive.toString(), 'tokenGive is correct')
+            order.amountGive.toString().should.equal(amountGive.toString(), 'amountGive is correct')
+            order.timestamp.toString().length.should.be.at.least(1, 'time is there')
+        })
+
+        describe('success', () => {
+            it('Order event', async () => {
+                let log = result.logs[0]
+                let event = log.args
+                event.id.toString().should.equal('1', 'ID is correct'))
+                event.user.toString().should.equal(user1.toString(), 'user is correct')
+                event.tokenGet.toString().should.equal(tokenGet.toString(), 'tokenGet is correct')
+                event.amountGet.toString().should.equal(amountGet.toString(), 'amountGet is correct')
+                event.tokenGive.toString().should.equal(tokenGive.toString(), 'tokenGive is correct')
+                event.amountGive.toString().should.equal(amountGive.toString(), 'amountGive is correct')
+            })
+        })
+
+        describe('failure', () => {
+            it('token address is not a token', async () => {
+                
             })
         })
     })
