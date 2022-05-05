@@ -69,7 +69,6 @@ contract('Token', ([deployer, receiver]) => {
         event.from.toString().should.equal(deployer, 'from is correct')
         event.to.should.equal(receiver, 'to is correct')
         event.value.toString().should.equal(amount.toString(), 'value is correct')
-        console.log(event[0])
       })
 
     })
